@@ -1,0 +1,6 @@
+name = "lofasocialfund"
+compatibility_date = "2024-02-02"
+
+[[pages.build]]
+# Directory to upload built assets from
+upload_dir = "public"

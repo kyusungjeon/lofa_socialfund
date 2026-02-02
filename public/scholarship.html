@@ -1,0 +1,49 @@
+<div class="form-card shadow">
+    <h3 class="text-center fw-bold text-primary mb-4">{% if edit_mode %}🔄 장학금 지원 수정{% else %}🎓 장학금 지원 신청서{% endif %}</h3>
+    <div id="hiddenStore" data-detail="{{ data.세부내용 if data.세부내용 else '' }}" style="display:none;"></div>
+    <form id="welfareForm">
+        <input type="hidden" name="index" value="{{ edit_idx if edit_mode else '' }}">
+        <input type="hidden" name="type" value="장학금지원">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><label class="fw-bold">부서</label><input type="text" name="department" class="form-control" value="{{ data.부서 if data else '' }}" required></div>
+            <div class="col-md-4"><label class="fw-bold">직급</label><input type="text" name="position" class="form-control" value="{{ data.직급 if data else '' }}" required></div>
+            <div class="col-md-4"><label class="fw-bold">성명</label><input type="text" class="form-control bg-light" value="{{ user_name }}" readonly></div>
+        </div>
+        <div class="d-flex justify-content-between mb-2"><strong>자녀 정보 (목록)</strong><button type="button" class="btn btn-sm btn-primary" onclick="addRow()">+ 자녀 추가</button></div>
+        <div id="rowContainer"></div>
+        <div class="my-4 p-3 bg-light border rounded">
+            <label class="fw-bold">총 신청 금액</label>
+            <input type="number" name="amount" id="totalAmt" class="form-control fw-bold text-end" value="{{ data.신청금액 if data else 0 }}" readonly>
+        </div>
+        <div class="mb-4"><label class="fw-bold text-primary">계좌번호 (은행/번호/예금주)</label><input type="text" name="account" class="form-control" value="{{ data.계좌번호 if data else '' }}" required></div>
+        <div class="alert alert-info small"><b>첨부서류:</b> 재학증명서, 성적증명서, 주민등록등본, 등록금청구서/영수증 등</div>
+        <button type="submit" class="btn btn-primary btn-lg w-100 shadow">{{ '수정 완료 및 재제출' if edit_mode else '신청서 제출하기' }}</button>
+    </form>
+</div>
+<script>
+    function addRow(n='', g='', a='') {
+        const div = document.createElement('div'); div.className = 'p-3 border rounded mb-2 position-relative bg-white';
+        div.innerHTML = `<button type="button" class="btn-close position-absolute" style="top:5px;right:5px;" onclick="this.parentElement.remove(); calc();"></button>
+            <div class="row g-2">
+                <div class="col-md-4"><input type="text" name="child_name[]" class="form-control form-control-sm" placeholder="자녀성명" value="${n}" required></div>
+                <div class="col-md-4"><input type="text" name="child_grade[]" class="form-control form-control-sm" placeholder="학년" value="${g}" required></div>
+                <div class="col-md-4"><input type="number" name="child_amount[]" class="form-control form-control-sm amt-in" oninput="calc()" placeholder="신청금액" value="${a}" required></div>
+            </div>`;
+        document.getElementById('rowContainer').appendChild(div);
+    }
+    function calc() {
+        let s = 0; document.querySelectorAll('.amt-in').forEach(i => s += (parseInt(i.value) || 0));
+        document.getElementById('totalAmt').value = s;
+    }
+    window.onload = function() {
+        const raw = document.getElementById('hiddenStore').getAttribute('data-detail');
+        if(raw) raw.split('||').forEach(r => { const p = r.split('|'); if(p.length==3) addRow(p[0],p[1],p[2]); });
+        else addRow(); calc();
+    };
+    document.getElementById('welfareForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const url = "{{ '/edit_submit' if edit_mode else '/submit' }}";
+        const res = await fetch(url, { method: 'POST', body: new FormData(e.target) });
+        if((await res.json()).status==='success') { alert('완료되었습니다.'); location.href='/my_status'; }
+    };
+</script>

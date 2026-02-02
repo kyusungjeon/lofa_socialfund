@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>다자녀 보육 지원 신청서 - LOFA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f9; padding: 40px 0; font-family: 'Malgun Gothic', sans-serif; }
+        .form-card { background: white; border-radius: 15px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header-line { border-left: 5px solid #6c5ce7; padding-left: 15px; margin-bottom: 30px; }
+        .section-title { font-size: 1.1rem; font-weight: bold; color: #6c5ce7; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #e9ecef; padding-bottom: 5px; }
+        .child-item { background-color: #f8f7ff; border: 1px solid #dcdde1; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; }
+        .info-text { background-color: #f0f1f8; border-radius: 10px; padding: 15px; font-size: 0.9rem; color: #444; border: 1px solid #dcdde1; }
+        .btn-remove { position: absolute; top: 10px; right: 10px; padding: 0px 8px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+<div class="container" style="max-width: 800px;">
+    <div class="form-card">
+        <div class="header-line">
+            <h2 class="fw-bold">다자녀 보육 지원 신청서</h2>
+            <p class="text-muted mb-0">다자녀 가구 임직원을 위한 보육 및 교육 지원 신청 양식입니다.</p>
+        </div>
+
+        <form id="multiChildForm" enctype="multipart/form-data">
+            <input type="hidden" name="type" value="다자녀지원">
+
+            <div class="section-title">1. 신청인 정보</div>
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label fw-bold">소속부서</label><input type="text" name="department" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">직급</label><input type="text" name="position" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">사번</label><input type="text" name="employeeId" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">성명</label><input type="text" name="employeeName" class="form-control" value="{{ user_name }}" readonly></div>
+                <div class="col-md-4"><label class="form-label fw-bold">연락처</label><input type="tel" name="phone" class="form-control" placeholder="010-0000-0000" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">자녀수</label><input type="number" name="child_count" class="form-control" placeholder="명" required></div>
+            </div>
+
+            <div class="section-title d-flex justify-content-between align-items-center">
+                2. 지원 대상 자녀 정보
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChildItem()">+ 자녀 추가</button>
+            </div>
+            <div id="childList">
+                <div class="child-item">
+                    <div class="row g-2">
+                        <div class="col-md-4"><input type="text" name="child_name[]" class="form-control form-control-sm" placeholder="자녀 성명" required></div>
+                        <div class="col-md-4"><input type="date" name="child_birth[]" class="form-control form-control-sm" required></div>
+                        <div class="col-md-4"><input type="text" name="child_relation[]" class="form-control form-control-sm" placeholder="관계 (예: 자)" required></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">3. 지원금 신청 정보</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">신청 금액</label>
+                    <input type="number" name="amount" class="form-control" placeholder="숫자만 입력" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">지급 계좌번호</label>
+                    <input type="text" name="account" class="form-control" placeholder="은행명 및 계좌번호" required>
+                </div>
+            </div>
+
+            <div class="section-title">4. 증빙서류 제출</div>
+            <div class="info-text mb-3">
+                <strong>[필수 증빙 서류]</strong><br>
+                - 주민등록등본 또는 가족관계증명서 1부 (다자녀 확인용)<br>
+                - 보육료/교육비 납입 증명서 (해당 시)
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">증빙 파일 업로드</label>
+                <input type="file" name="attachment" class="form-control">
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-lg text-white" style="background-color: #6c5ce7; border: none;">다자녀 지원 신청</button>
+                <a href="/" class="btn btn-light">이전 메뉴로</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function addChildItem() {
+    const container = document.getElementById('childList');
+    const newItem = document.createElement('div');
+    newItem.className = 'child-item';
+    newItem.innerHTML = `
+        <button type="button" class="btn btn-close btn-remove" onclick="this.parentElement.remove();"></button>
+        <div class="row g-2">
+            <div class="col-md-4"><input type="text" name="child_name[]" class="form-control form-control-sm" placeholder="자녀 성명" required></div>
+            <div class="col-md-4"><input type="date" name="child_birth[]" class="form-control form-control-sm" required></div>
+            <div class="col-md-4"><input type="text" name="child_relation[]" class="form-control form-control-sm" placeholder="관계 (예: 자)" required></div>
+        </div>
+    `;
+    container.appendChild(newItem);
+}
+
+document.getElementById('multiChildForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // 자녀 정보를 요약 문자열로 변환
+    let childStr = "";
+    const names = formData.getAll('child_name[]');
+    const births = formData.getAll('child_birth[]');
+    names.forEach((name, i) => {
+        childStr += `${name}(${births[i]}) `;
+    });
+
+    formData.append('content', `부서:${formData.get('department')}, 총자녀수:${formData.get('child_count')}, 대상:${childStr}, 계좌:${formData.get('account')}, 신청액:${formData.get('amount')}`);
+
+    const res = await fetch('/submit', { method: 'POST', body: formData });
+    const data = await res.json();
+    if(data.status === 'success') {
+        alert('다자녀 보육 지원 신청서가 정상적으로 접수되었습니다.');
+        location.href = '/';
+    } else {
+        alert('에러 발생: ' + data.message);
+    }
+};
+</script>
+
+<div class="form-card shadow p-4 bg-white rounded">
+    <h3 class="fw-bold text-info mb-4 text-center">👶 다자녀가정 생활지원 신청서</h3>
+    <div id="hiddenStore" data-detail="{{ data.세부내용 if data.세부내용 else '' }}" style="display:none;"></div>
+    <form id="welfareForm">
+        <input type="hidden" name="type" value="다자녀가정지원">
+        <div class="section-title">자녀 정보 (미취학 자녀 목록)</div>
+        <div id="rowContainer"></div>
+        <button type="button" class="btn btn-outline-info btn-sm mb-4" onclick="addRow()">+ 자녀 추가</button>
+        <div class="mb-3"><label>신청 금액</label><input type="number" name="amount" class="form-control" value="{{ data.신청금액 if data else 0 }}"></div>
+        <div class="mb-4"><label>계좌번호</label><input type="text" name="account" class="form-control" value="{{ data.계좌번호 if data else '' }}"></div>
+        <div class="alert alert-info small"><b>첨부서류:</b> 가족관계증명서 등 미취학 다자녀 증빙</div>
+        <button type="submit" class="btn btn-info w-100 text-white btn-lg">제출하기</button>
+    </form>
+</div>
+<script>
+    function addRow(n='', b='', p='', no='') {
+        const div = document.createElement('div'); div.className = 'p-3 border rounded mb-2 bg-light';
+        div.innerHTML = `<div class="row g-2">
+                <div class="col-md-3"><input type="text" name="c_name[]" class="form-control form-control-sm" placeholder="성명" value="${n}"></div>
+                <div class="col-md-3"><input type="date" name="c_birth[]" class="form-control form-control-sm" value="${b}"></div>
+                <div class="col-md-3"><input type="text" name="c_plan[]" class="form-control form-control-sm" placeholder="취학예정일" value="${p}"></div>
+                <div class="col-md-3"><input type="text" name="c_note[]" class="form-control form-control-sm" placeholder="비고" value="${no}"></div>
+            </div>`;
+        document.getElementById('rowContainer').appendChild(div);
+    }
+    // ... (자바스크립트 복구 로직 동일) ...
+</script>
+</body>
+</html>

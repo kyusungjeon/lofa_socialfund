@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>생활복지 지원 신청서 - LOFA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f9; padding: 40px 0; font-family: 'Malgun Gothic', sans-serif; }
+        .form-card { background: white; border-radius: 15px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header-line { border-left: 5px solid #f39c12; padding-left: 15px; margin-bottom: 30px; }
+        .section-title { font-size: 1.1rem; font-weight: bold; color: #e67e22; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #e9ecef; padding-bottom: 5px; }
+        .info-text { background-color: #fef9e7; border-radius: 10px; padding: 15px; font-size: 0.9rem; color: #444; border: 1px solid #f9e79f; }
+    </style>
+</head>
+<body>
+<div class="container" style="max-width: 800px;">
+    <div class="form-card">
+        <div class="header-line">
+            <h2 class="fw-bold">생활복지 지원 신청서</h2>
+            <p class="text-muted mb-0">학원 수강료, 도서 구입비 등 임직원의 자기계발 및 생활 복지 지원 양식입니다.</p>
+        </div>
+
+        <form id="lifeWelfareForm" enctype="multipart/form-data">
+            <input type="hidden" name="type" value="생활복지지원">
+
+            <div class="section-title">1. 신청인 정보</div>
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label fw-bold">소속부서</label><input type="text" name="department" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">직급</label><input type="text" name="position" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">사번</label><input type="text" name="employeeId" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">성명</label><input type="text" name="employeeName" class="form-control" value="{{ user_name }}" readonly></div>
+                <div class="col-md-4"><label class="form-label fw-bold">입사일</label><input type="date" name="joinDate" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label fw-bold">전화번호</label><input type="tel" name="phone" class="form-control" placeholder="010-0000-0000" required></div>
+            </div>
+
+            <div class="section-title">2. 지원 신청 내용</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">대상자 성명</label>
+                    <input type="text" name="target_name" class="form-control" placeholder="신청인 본인 등" required>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">지원 항목 분류</label>
+                    <input type="text" name="category" class="form-control" placeholder="예: 학원 수강료, 체육시설 이용료, 도서구입비 등" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">신청 금액</label>
+                    <input type="number" name="amount" class="form-control" placeholder="숫자만 입력" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">지급 계좌번호</label>
+                    <input type="text" name="account" class="form-control" placeholder="은행명 및 계좌번호" required>
+                </div>
+            </div>
+
+            <div class="section-title">3. 증빙서류 제출</div>
+            <div class="info-text mb-3">
+                <strong>[제출 증빙 안내]</strong><br>
+                - 생활복지 관련 실제 지출 증빙 서류 (현금영수증, 카드영수증, 수강확인서 등)<br>
+                - 온라인 결제 시 결제 내역 화면 캡처본 가능
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">증빙 파일 업로드</label>
+                <input type="file" name="attachment" class="form-control">
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-warning btn-lg text-white" style="background-color: #f39c12; border: none;">생활복지 지원 신청</button>
+                <a href="/" class="btn btn-light">이전 메뉴로</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('lifeWelfareForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // 엑셀 '내용' 칸에 들어갈 정보 조합
+    const summary = `대상:${formData.get('target_name')}, 항목:${formData.get('category')}, 부서:${formData.get('department')}, 연락처:${formData.get('phone')}, 계좌:${formData.get('account')}, 신청액:${formData.get('amount')}`;
+    
+    formData.append('sub_type', '생활복지');
+    formData.append('content', summary);
+
+    const res = await fetch('/submit', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const data = await res.json();
+    if(data.status === 'success') {
+        alert('생활복지 지원 신청이 정상적으로 접수되었습니다.');
+        location.href = '/';
+    } else {
+        alert('신청 실패: ' + data.message);
+    }
+};
+</script>
+</body>
+</html>

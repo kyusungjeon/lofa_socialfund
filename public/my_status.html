@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 신청 현황 - LOFA 복지기금</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f4f7f6; font-family: 'Malgun Gothic', sans-serif; padding-top: 50px; }
+        .status-container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1200px; margin: auto; }
+        .table thead { background-color: #f8f9fa; border-top: 2px solid #dee2e6; }
+        .badge-wait { background: #ffc107; color: #212529; font-weight: bold; }
+        .badge-approve { background: #198754; color: white; font-weight: bold; }
+        .badge-reject { background: #dc3545; color: white; font-weight: bold; }
+        .btn-action { font-weight: bold; border-radius: 8px; transition: 0.2s; }
+    </style>
+</head>
+<body>
+
+<div class="container status-container">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h3 class="fw-bold m-0 text-dark">
+            <i class="bi bi-file-earmark-person text-danger"></i> {{ user_name }} 차장님 신청 현황
+        </h3>
+        <a href="/" class="btn btn-outline-dark shadow-sm">
+            <i class="bi bi-house-door"></i> 메인으로 돌아가기
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="text-center">
+                <tr>
+                    <th style="width: 15%;">신청일시</th>
+                    <th style="width: 15%;">구분</th>
+                    <th style="width: 15%;">신청금액</th>
+                    <th style="width: 12%;">상태</th>
+                    <th style="width: 28%;">비고 / 반려사유</th>
+                    <th style="width: 15%;">관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td class="text-center small text-muted">{{ app.신청일시 }}</td>
+                    <td class="text-center"><span class="badge border text-dark px-3 py-2">{{ app.구분 }}</span></td>
+                    <td class="text-end fw-bold text-primary pe-4">{{ "{:,}".format(app.신청금액|int if app.신청금액 else 0) }}원</td>
+                    <td class="text-center">
+                        <span class="badge rounded-pill px-3 py-2 {% if app.상태 == '대기' %}badge-wait{% elif app.상태 == '승인' %}badge-approve{% elif app.상태 == '임시저장' %}bg-secondary{% else %}badge-reject{% endif %}">
+                            {{ app.상태 }}
+                        </span>
+                    </td>
+                    <td class="small text-muted px-3 text-center">
+                        {% if app.상태 == '반려' %}
+                            <span class="text-danger"><i class="bi bi-exclamation-circle"></i> {{ app.반려의견 }}</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if app.상태 == '대기' %}
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="cancelApp({{ app.original_index }})">
+                                <i class="bi bi-x-circle"></i> 취소
+                            </button>
+                        {% elif app.상태 == '임시저장' or app.상태 == '반려' %}
+                            <button class="btn btn-sm btn-primary btn-action" onclick="editApp('{{ app.구분 }}', {{ app.original_index }})">
+                                <i class="bi bi-pencil-square"></i> 수정
+                            </button>
+                        {% else %}
+                            <span class="text-muted small">처리완료</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="mt-3 text-muted">아직 신청하신 내역이 없습니다.</p>
+                        <a href="/" class="btn btn-sm btn-danger mt-2">첫 복지 신청하러 가기</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<footer class="text-center mt-5 text-muted small">
+    © 2026 한국지방재정공제회(LOFA) 인프라팀 복지기금관리시스템
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // [신청 취소] 대기 중인 항목을 임시저장 상태로 변경
+    async function cancelApp(idx) {
+        if(!confirm('신청을 취소하시겠습니까?\n취소하면 "임시저장" 상태가 되어 내용을 수정할 수 있습니다.')) return;
+        
+        try {
+            const res = await fetch('/cancel_apply', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `index=${idx}`
+            });
+            const result = await res.json();
+            
+            if(result.status === 'success') {
+                alert('신청이 취소되어 임시저장 상태로 변경되었습니다.');
+                location.reload();
+            } else {
+                alert('오류: ' + result.message);
+            }
+        } catch (err) {
+            alert('서버와 통신 중 오류가 발생했습니다.');
+        }
+    }
+
+    // [수정 이동] 한글 구분명을 파일명으로 매핑하여 해당 신청서로 이동
+    function editApp(type, idx) {
+        const map = {
+            '의료비지원': 'medical', 
+            '장학금지원': 'scholarship', 
+            '경조비지원': 'congratulation',
+            '선진산업시찰': 'inspection', 
+            '주택지원': 'housing', 
+            '복지연금': 'pension',
+            '모성보호': 'maternity', 
+            '다자녀가정지원': 'multichild', 
+            '위로금지원': 'solace', 
+            '생활복지지원': 'life_welfare'
+        };
+        
+        const fileName = map[type];
+        if (fileName) {
+            location.href = `/apply/${fileName}?edit_idx=${idx}`;
+        } else {
+            alert('해당 항목의 수정 페이지를 찾을 수 없습니다.');
+        }
+    }
+</script>
+
+</body>
+</html>

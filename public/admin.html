@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>LOFA 복지기금 관리 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="bg-dark text-white p-3 mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+        <h4 class="m-0">복지기금 신청 현황 (관리자)</h4>
+        <button id="logout-button" class="btn btn-danger btn-sm">로그아웃</button>
+    </div>
+</header>
+
+<div class="container">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>신청일</th>
+                <th>신청자명</th>
+                <th>사번</th>
+                <th>복지 항목</th>
+                <th>신청 금액</th>
+                <th>신청 사유</th>
+            </tr>
+        </thead>
+        <tbody id="applications-tbody">
+            <!-- Data will be loaded here by JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Check for admin session
+    const loggedInUser = sessionStorage.getItem('loggedInUser');
+    if (loggedInUser !== 'admin') {
+        alert('접근 권한이 없습니다. 로그인 페이지로 이동합니다.');
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // 2. Add logout functionality
+    document.getElementById('logout-button').addEventListener('click', () => {
+        sessionStorage.clear();
+        window.location.href = '/login.html';
+    });
+
+    // 3. Fetch and display applications
+    try {
+        const response = await fetch('/applications');
+        if (!response.ok) {
+            throw new Error('Failed to fetch applications.');
+        }
+        const applications = await response.json();
+        const tbody = document.getElementById('applications-tbody');
+
+        if (applications.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">제출된 신청서가 없습니다.</td></tr>';
+            return;
+        }
+
+        applications.forEach(app => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = new Date(app.date).toLocaleString();
+            row.insertCell().textContent = app.employeeName;
+            row.insertCell().textContent = app.employeeId;
+            row.insertCell().textContent = app.benefitType;
+            row.insertCell().textContent = app.amount ? Number(app.amount).toLocaleString() + '원' : '-';
+            row.insertCell().textContent = app.reason;
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        const tbody = document.getElementById('applications-tbody');
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>복지연금 지원 신청 - LOFA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f7f9; padding: 30px; font-family: 'Malgun Gothic', sans-serif; }
+        .form-card { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
+        .section-title { border-left: 5px solid #0d6efd; padding-left: 10px; margin-bottom: 20px; font-weight: bold; }
+        /* 팝업(iframe) 시 하단 버튼 숨김 */
+        body.is-popup .original-buttons { display: none !important; }
+        body.is-popup { background: white; padding: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-card">
+        <h3 class="text-center fw-bold text-primary mb-5">직원 복지연금 지원 신청서</h3>
+        <form id="pensionForm">
+            <input type="hidden" name="index" value="{{ edit_idx if edit_mode else '' }}">
+            <input type="hidden" name="type" value="복지연금지원">
+
+            <div class="section-title">1. 신청인 정보</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">소속부서</label>
+                    <input type="text" name="department" class="form-control" value="{{ data.부서 if edit_mode else '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">직급</label>
+                    <input type="text" name="position" class="form-control" value="{{ data.직급 if edit_mode else '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">사번</label>
+                    <input type="text" name="employeeId" class="form-control bg-light" value="{{ session['user_id'] }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">성명</label>
+                    <input type="text" class="form-control bg-light" value="{{ user_name }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">입사일</label>
+                    <input type="date" name="joinDate" class="form-control" value="{{ data.입사일 if edit_mode else '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">전화번호</label>
+                    <input type="text" name="phone" class="form-control" value="{{ data.전화번호 if edit_mode else '' }}">
+                </div>
+            </div>
+
+            <div class="section-title">2. 지원 내용</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">지원항목</label>
+                    <input type="text" name="disease_name" class="form-control" value="{{ data['질병/항목명'] if edit_mode else '' }}" placeholder="예: 개인연금 지원" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">금융기관</label>
+                    <input type="text" name="target_name" class="form-control" value="{{ data.대상자성명 if edit_mode else '' }}" placeholder="예: OO은행" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">본인부담금액</label>
+                    <input type="number" name="self_pay" class="form-control" value="{{ data.본인부담금 if edit_mode else '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">신청금액</label>
+                    <input type="number" name="amount" class="form-control" value="{{ data.금액 if edit_mode else '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">계좌번호</label>
+                    <input type="text" name="account" class="form-control" value="{{ data.계좌번호 if edit_mode else '' }}" required>
+                </div>
+            </div>
+
+            <div class="section-title">3. 첨부서류</div>
+            <div class="mb-4">
+                <label class="form-label small text-muted">복지연금 가입사실 및 본인부담분 납입 약정 증명 자료</label>
+                <input type="file" name="attachment" class="form-control">
+            </div>
+
+            <div class="original-buttons mt-5 border-top pt-4">
+                <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">지원 신청하기</button>
+                <a href="/" class="btn btn-outline-secondary w-100 mt-2">메인으로</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 팝업 감지 로직
+    if (window.self !== window.top) document.body.classList.add('is-popup');
+
+    document.getElementById('pensionForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const url = "{{ '/edit_submit' if edit_mode else '/submit' }}";
+        
+        try {
+            const res = await fetch(url, { method: 'POST', body: new FormData(e.target) });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                if (window.self !== window.top) {
+                    // 부모 창(my_status)에 성공 신호 전송
+                    window.parent.postMessage('success', '*');
+                } else {
+                    alert('성공적으로 접수되었습니다.');
+                    location.href = '/my_status';
+                }
+            } else {
+                alert('오류: ' + result.message);
+            }
+        } catch (err) {
+            alert('서버 통신 오류가 발생했습니다.');
+        }
+    };
+</script>
+<div class="form-card shadow p-4 bg-white rounded">
+    <h3 class="fw-bold text-warning mb-4 text-center text-dark">💰 직원 복지연금 지원 신청서</h3>
+    <form id="welfareForm">
+        <input type="hidden" name="type" value="복지연금">
+        <div class="row g-3 mb-4">
+            <div class="col-md-6"><label>지원항목</label><input type="text" name="pension_item" class="form-control" value="{{ data.세부내용.split('|')[0] if data.세부내용 else '' }}" placeholder="예: 개인연금"></div>
+            <div class="col-md-6"><label>금융기관</label><input type="text" name="bank_name" class="form-control" value="{{ data.세부내용.split('|')[1] if data.세부내용 and '|' in data.세부내용 else '' }}"></div>
+            <div class="col-12"><label>본인부담금액</label><input type="number" name="my_pay" class="form-control" value="{{ data.본인부담금액 if data else 0 }}"></div>
+        </div>
+        <div class="mb-3"><label>신청 금액</label><input type="number" name="amount" class="form-control fw-bold" value="{{ data.신청금액 if data else 0 }}"></div>
+        <div class="mb-4"><label>계좌번호</label><input type="text" name="account" class="form-control" value="{{ data.계좌번호 if data else '' }}" required></div>
+        <div class="alert alert-warning text-dark small"><b>첨부서류:</b> 복지연금 가입사실 및 본인부담분 납입 약정 증빙 자료</div>
+        <button type="submit" class="btn btn-warning w-100 btn-lg shadow">제출하기</button>
+    </form>
+</div>
+</body>
+</html>
